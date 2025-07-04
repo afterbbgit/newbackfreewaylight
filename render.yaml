@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: email-whitelist-php
+    runtime: php
+    rootDir: .
+    buildCommand: ""
+    startCommand: ""
+    plan: free
+    envVars: []

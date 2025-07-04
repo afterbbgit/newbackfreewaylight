@@ -1,48 +1,43 @@
 <?php
-
+// Allow CORS for frontend
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
-header("Access-Control-Allow-Headers: Content-Type");
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(["success" => false, "message" => "Method not allowed"]);
-    exit;
-}
-
+// Get POSTed JSON input
 $input = json_decode(file_get_contents('php://input'), true);
-$email = trim($input['email'] ?? '');
+$email = isset($input['email']) ? trim($input['email']) : '';
 
-if (empty($email)) {
-    http_response_code(400);
-    echo json_encode(["success" => false, "message" => "Email is required"]);
+// Basic email format validation
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Adresse e‑mail invalide.'
+    ]);
     exit;
 }
 
-$whitelist = file('whitelist.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-$email = strtolower($email);
-$allowed = false;
+// Load whitelist.txt
+$whitelistPath = __DIR__ . '/whitelist.txt';
 
-foreach ($whitelist as $entry) {
-    $entry = strtolower(trim($entry));
-    if (strpos($entry, '*@') === 0) {
-        $domain = substr($entry, 2);
-        if (str_ends_with($email, '@' . $domain)) {
-            $allowed = true;
-            break;
-        }
-    } elseif ($email === $entry) {
-        $allowed = true;
-        break;
-    }
+if (!file_exists($whitelistPath)) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Fichier de liste blanche introuvable.'
+    ]);
+    exit;
 }
 
-if ($allowed) {
+$whitelist = file($whitelistPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+// Compare email (case-insensitive)
+if (in_array(strtolower($email), array_map('strtolower', $whitelist))) {
     echo json_encode([
-        "success" => true,
-        "redirectUrl" => "https://yourdomain.com/proposal.pdf"
+        'success' => true,
+        'redirectUrl' => 'https://yourdomain.com/FA7658923‑07‑2025.xls'
     ]);
 } else {
-    http_response_code(403);
-    echo json_encode(["success" => false, "message" => "Email not authorized"]);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Adresse e‑mail non autorisée.'
+    ]);
 }
